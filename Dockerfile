@@ -4,14 +4,20 @@ USER root
 
 WORKDIR src/root
 
-# RUN echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-$(lsb_release -cs 2>/dev/null)-prod $(lsb_release -cs 2>/dev/null) main" > /etc/apt/sources.list.d/dotnetdev.list
+# ENV languageWorkers:python:defaultExecutablePath=/src/root/venv/bin/python3
+
+RUN apt-get update
+RUN apt-get install software-properties-common --yes
+RUN add-apt-repository ppa:deadsnakes/ppa
+
 RUN apt-get update
 RUN apt-get install wget --yes
 RUN apt-get install libicu-dev --yes
 RUN apt-get install curl --yes
-RUN apt-get install python3 --yes
+RUN apt-get install python3.11 --yes
 RUN apt-get install vim --yes
 RUN apt-get install python3-venv --yes
+RUN apt install python3-pip --yes
 RUN python3 -m venv venv
 RUN wget -q https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb
 RUN dpkg -i packages-microsoft-prod.deb
@@ -24,10 +30,15 @@ COPY setup.py setup.py
 COPY build-dependencies.txt build-dependencies.txt
 RUN venv/bin/pip install -r build-dependencies.txt
 RUN venv/bin/pip-compile -o requirements.txt setup.py
+# RUN pip install -r requirements.txt --break-system-packages
+RUN python3.11 -m pip install -r requirements.txt
 
 # Copy files from repo
 
-COPY hello_world.py hello_world.py
+COPY notionAPISourceToRaw/ notionAPISourceToRaw/
+COPY host.json host.json
+COPY local.settings.json local.settings.json
 
+EXPOSE 80:80
 
-CMD sleep infinity
+CMD func start --python --port 80 --verbose
